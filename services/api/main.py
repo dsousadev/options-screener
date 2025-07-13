@@ -1,6 +1,7 @@
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 import psycopg2
+import psycopg2.extras
 import os
 import time
 
@@ -62,4 +63,31 @@ def health():
     except Exception as e:
         db_status = f"error: {e}"
 
-    return {"status": "ok", "database": db_status} 
+    return {"status": "ok", "database": db_status}
+
+@app.get("/results/{screener_name}")
+def get_results(screener_name: str):
+    """Retrieves screening results for a given screener name."""
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    query = """
+    SELECT
+        r.found_at,
+        o.underlying,
+        o.expiry,
+        o.strike,
+        o.call_put,
+        o.bid,
+        o.ask
+    FROM screener_results r
+    JOIN option_chains o ON r.option_chain_id = o.id
+    WHERE r.screener_name = %s
+    ORDER BY r.found_at DESC
+    LIMIT 100;
+    """
+    # Using a dictionary cursor to get key-value pairs
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+        cursor.execute(query, (screener_name,))
+        results = cursor.fetchall()
+
+    conn.close()
+    return {"screener": screener_name, "results": results} 

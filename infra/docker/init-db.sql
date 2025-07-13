@@ -40,4 +40,15 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- Create indexes for notifications table
 CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications(status);
-CREATE INDEX IF NOT EXISTS idx_notifications_request_id ON notifications(request_id); 
+CREATE INDEX IF NOT EXISTS idx_notifications_request_id ON notifications(request_id);
+
+-- Create the screener_results table
+CREATE TABLE IF NOT EXISTS screener_results (
+    id SERIAL PRIMARY KEY,
+    screener_name VARCHAR(100) NOT NULL,
+    option_chain_id INTEGER REFERENCES option_chains(id) ON DELETE CASCADE,
+    found_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for screener_results table
+CREATE INDEX IF NOT EXISTS idx_results_lookup ON screener_results (screener_name); 
