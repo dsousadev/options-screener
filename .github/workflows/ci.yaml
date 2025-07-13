@@ -11,6 +11,7 @@ jobs:
     env:
       SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
       FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+      TO_EMAIL: ${{ secrets.TO_EMAIL }}
       IEX_CLOUD_API_KEY: ${{ secrets.IEX_CLOUD_API_KEY }}
     # ----------------------------------------------------
 
