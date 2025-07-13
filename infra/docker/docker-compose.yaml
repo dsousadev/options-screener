@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  db:
+    image: flyio/postgres-flex:15
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ../../services/api
+    depends_on: [db]
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: postgresql://postgres:changeme@db:5432/opt_screener
+
+  worker:
+    build: ../../services/worker
+    depends_on: [db]
+    environment:
+      DATABASE_URL: postgresql://postgres:changeme@db:5432/opt_screener
+
+volumes:
+  pgdata: 
