@@ -10,8 +10,10 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: Build images
         run: docker compose -f infra/docker/docker-compose.yaml build
-      - name: Unit tests placeholder
-        run: echo "no tests yet"
+      - name: Install test dependencies
+        run: pip install pytest fastapi httpx
+      - name: Run unit tests
+        run: python -m pytest tests/
       - name: Run data-ingest tests
         run: |
           cd services/data_ingest
