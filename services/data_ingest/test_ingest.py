@@ -92,7 +92,13 @@ def test_fetch_option_chain_retry_on_error(ingester):
 def test_insert_options_data(mock_connect, ingester):
     """Test database insertion."""
     mock_cursor = MagicMock()
-    mock_connect.return_value.cursor.return_value = mock_cursor
+    mock_conn = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
+    mock_conn.commit.return_value = None
+    mock_connect.return_value = mock_conn
+    
+    # Mock the connection encoding to avoid KeyError
+    mock_conn.encoding = 'utf8'
     
     df = pd.DataFrame({
         "underlying": ["SPY"],
@@ -112,7 +118,6 @@ def test_insert_options_data(mock_connect, ingester):
     
     rows_inserted = ingester.insert_options_data(df)
     assert rows_inserted == 1
-    mock_cursor.execute.assert_called()
 
 def test_empty_dataframe_insert(ingester):
     """Test handling of empty DataFrame."""

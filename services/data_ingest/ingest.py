@@ -78,7 +78,7 @@ class OptionChainIngester:
                 "as_of": as_of,
                 "expiry": option.get("expirationDate"),
                 "strike": option.get("strikePrice"),
-                "call_put": option.get("side", "C").upper(),
+                "call_put": "C" if option.get("side", "").lower() == "call" else "P",
                 "bid": option.get("bid"),
                 "ask": option.get("ask"),
                 "iv": None,  # IEX Cloud free tier doesn't include Greeks
