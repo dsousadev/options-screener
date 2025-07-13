@@ -10,8 +10,11 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: Build images
         run: docker compose -f infra/docker/docker-compose.yaml build
-      - name: Install test dependencies
-        run: pip install pytest fastapi httpx
+      - name: Install dependencies
+        run: |
+          pip install pytest httpx
+          pip install -r services/api/requirements.txt
+          pip install -r services/worker/requirements.txt
       - name: Run unit tests
         run: python -m pytest tests/
       - name: Run services in background to test
