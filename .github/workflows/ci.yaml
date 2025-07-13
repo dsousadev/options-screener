@@ -22,7 +22,11 @@ jobs:
           # This block securely passes secrets AND fixes networking
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          DATA_API_KEY: ${{ secrets.DATA_API_KEY }}
         run: |
+          export SENDGRID_API_KEY="$SENDGRID_API_KEY"
+          export FROM_EMAIL="$FROM_EMAIL"
+          export DATA_API_KEY="$DATA_API_KEY"
           docker compose -f infra/docker/docker-compose.yaml up --build -d
 
       - name: Wait for services to be healthy
