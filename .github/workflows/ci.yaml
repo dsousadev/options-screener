@@ -27,7 +27,7 @@ jobs:
       - name: ✅ Get evidence for Done Check 1
         run: |
           echo "--- Testing API endpoint ---"
-          curl -X POST http://localhost:8000/screen -H "Content-Type: application/json" -d '{"tickers": ["AAPL", "TSLA"], "strategy": "covered_call"}'
+          curl -X POST http://localhost:8000/screen -H "Content-Type: application/json" -d '{"tickers": ["AAPL", "TSLA"], "strategy": "covered_call", "email": "test@example.com"}'
           echo "" # new line
 
       - name: ✅ Get evidence for Done Check 2

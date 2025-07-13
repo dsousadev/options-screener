@@ -35,5 +35,13 @@ services:
     labels:
       - "com.docker.compose.schedule=*/30 * * * * *"
 
+  notifier:
+    build: ../../services/notifier
+    depends_on: [db]
+    environment:
+      DATABASE_URL: postgresql://postgres:changeme@db:5432/opt_screener
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      FROM_EMAIL: ${FROM_EMAIL}
+
 volumes:
   pgdata: 

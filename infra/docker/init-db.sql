@@ -25,4 +25,19 @@ CREATE TABLE IF NOT EXISTS option_chains (
 
 -- Create indexes for efficient queries
 CREATE INDEX IF NOT EXISTS idx_option_chains_underlying_as_of ON option_chains(underlying, as_of);
-CREATE INDEX IF NOT EXISTS idx_option_chains_expiry ON option_chains(expiry); 
+CREATE INDEX IF NOT EXISTS idx_option_chains_expiry ON option_chains(expiry);
+
+-- Create the notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    request_id VARCHAR(255) NOT NULL,
+    recipient_email VARCHAR(255) NOT NULL,
+    subject TEXT,
+    body TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for notifications table
+CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications(status);
+CREATE INDEX IF NOT EXISTS idx_notifications_request_id ON notifications(request_id); 

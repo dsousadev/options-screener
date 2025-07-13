@@ -9,6 +9,7 @@ app = FastAPI()
 class ScreenerRequest(BaseModel):
     tickers: list[str]
     strategy: str
+    email: str # Add this line
 
 def run_screening_task(request_id: str, tickers: list[str]):
     """Placeholder for the actual screening logic."""
@@ -29,7 +30,28 @@ async def start_screening(req: ScreenerRequest, background_tasks: BackgroundTask
     # Add the intensive screening task to the background
     background_tasks.add_task(run_screening_task, request_id, req.tickers)
 
-    return {"status": "queued", "request_id": request_id}
+    # Queue a notification
+    subject = f"Your options screening for {', '.join(req.tickers)} is complete"
+    body = f"Request {request_id} is finished. Results are now available."
+
+    try:
+        conn = psycopg2.connect(os.environ["DATABASE_URL"])
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO notifications (request_id, recipient_email, subject, body)
+            VALUES (%s, %s, %s, %s);
+            """,
+            (request_id, req.email, subject, body)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        notification_status = "queued"
+    except Exception as e:
+        notification_status = f"queueing failed: {e}"
+
+    return {"status": "queued", "request_id": request_id, "notification_status": notification_status}
 
 @app.get("/health")
 def health():
