@@ -88,7 +88,7 @@ def test_fetch_option_chain_retry_on_error(ingester):
     data = ingester.fetch_option_chain("SPY")
     assert len(data) == 1
 
-@patch('ingest.psycopg2.extras.execute_values')
+@patch('ingest.execute_values')
 @patch('ingest.psycopg2.connect')
 def test_insert_options_data(mock_connect, mock_execute_values, ingester):
     """Test that insert_options_data calls execute_values with correct data."""
