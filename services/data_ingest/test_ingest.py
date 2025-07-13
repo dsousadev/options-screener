@@ -99,6 +99,7 @@ def test_insert_options_data(mock_connect, ingester):
     
     # Mock the connection encoding to avoid KeyError
     mock_conn.encoding = 'utf8'
+    mock_cursor.connection.encoding = 'utf8'
     
     df = pd.DataFrame({
         "underlying": ["SPY"],
@@ -118,6 +119,8 @@ def test_insert_options_data(mock_connect, ingester):
     
     rows_inserted = ingester.insert_options_data(df)
     assert rows_inserted == 1
+    mock_cursor.execute.assert_called_once()
+    mock_conn.commit.assert_called_once()
 
 def test_empty_dataframe_insert(ingester):
     """Test handling of empty DataFrame."""
