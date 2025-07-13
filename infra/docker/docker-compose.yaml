@@ -8,6 +8,7 @@ services:
       POSTGRES_PASSWORD: changeme
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ../../infra/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
 
   api:
     build: ../../services/api
@@ -22,6 +23,17 @@ services:
     depends_on: [db]
     environment:
       DATABASE_URL: postgresql://postgres:changeme@db:5432/opt_screener
+
+  data_ingest:
+    build: ../../services/data_ingest
+    depends_on: [db]
+    environment:
+      DATABASE_URL: postgresql://postgres:changeme@db:5432/opt_screener
+      DATA_API_KEY: ${DATA_API_KEY}
+      DATA_API_BASE_URL: https://cloud.iexapis.com/stable
+    restart: unless-stopped
+    labels:
+      - "com.docker.compose.schedule=*/30 * * * * *"
 
 volumes:
   pgdata: 
