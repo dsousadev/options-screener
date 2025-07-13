@@ -19,19 +19,11 @@ jobs:
         run: python -m pytest tests/
       - name: Run services for end-to-end test
         env:
+          # Provide ALL secrets needed by ANY service in the compose file
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
           DATA_API_KEY: ${{ secrets.DATA_API_KEY }}
         run: |
-          # Ensure environment variables are available to Docker Compose
-          export SENDGRID_API_KEY="$SENDGRID_API_KEY"
-          export FROM_EMAIL="$FROM_EMAIL"
-          export DATA_API_KEY="$DATA_API_KEY"
-          
-          # Start services with environment variables explicitly passed
-          SENDGRID_API_KEY="$SENDGRID_API_KEY" \
-          FROM_EMAIL="$FROM_EMAIL" \
-          DATA_API_KEY="$DATA_API_KEY" \
           docker compose -f infra/docker/docker-compose.yaml up --build -d
 
       - name: Wait for services to be healthy
