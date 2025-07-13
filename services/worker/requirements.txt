@@ -3,4 +3,5 @@ pandas
 numpy
 scipy
 redis>=5.0
-rq>=1.15 
+rq>=1.15
+pytest 
