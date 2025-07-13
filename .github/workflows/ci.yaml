@@ -17,12 +17,16 @@ jobs:
           pip install -r services/worker/requirements.txt
       - name: Run unit tests
         run: python -m pytest tests/
-      - name: Run services in background to test
+      - name: Run services for end-to-end test
+        env:
+          # This block securely passes secrets AND fixes networking
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
         run: |
-          docker compose -f infra/docker/docker-compose.yaml up --build -d
+          docker-compose -f infra/docker/docker-compose.yaml up --build -d
 
       - name: Wait for services to be healthy
-        run: sleep 15 # Give services time to start
+        run: sleep 20
 
       - name: ✅ Get evidence for Done Check 1
         run: |
@@ -33,12 +37,12 @@ jobs:
       - name: ✅ Get evidence for Done Check 2
         run: |
           echo "--- Checking Worker logs ---"
-          docker compose -f infra/docker/docker-compose.yaml logs worker
+          docker-compose -f infra/docker/docker-compose.yaml logs worker
 
-      - name: ✅ Get evidence for Done Check 3
+      - name: ✅ Check Notifier logs
         run: |
           echo "--- Checking Notifier logs ---"
-          docker compose -f infra/docker/docker-compose.yaml logs notifier
+          docker-compose -f infra/docker/docker-compose.yaml logs notifier
       - name: Run data-ingest tests
         run: |
           cd services/data_ingest
