@@ -26,7 +26,7 @@ jobs:
 
       - name: ✅ Get evidence for Done Check 1
         run: |
-          echo "--- Testing API endpoint ---"
+          echo "--- Testing API endpoint with notification ---"
           curl -X POST http://localhost:8000/screen -H "Content-Type: application/json" -d '{"tickers": ["AAPL", "TSLA"], "strategy": "covered_call", "email": "test@example.com"}'
           echo "" # new line
 
@@ -34,6 +34,11 @@ jobs:
         run: |
           echo "--- Checking Worker logs ---"
           docker compose -f infra/docker/docker-compose.yaml logs worker
+
+      - name: ✅ Get evidence for Done Check 3
+        run: |
+          echo "--- Checking Notifier logs ---"
+          docker compose -f infra/docker/docker-compose.yaml logs notifier
       - name: Run data-ingest tests
         run: |
           cd services/data_ingest
