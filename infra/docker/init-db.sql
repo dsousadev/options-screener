@@ -51,4 +51,22 @@ CREATE TABLE IF NOT EXISTS screener_results (
 );
 
 -- Create indexes for screener_results table
-CREATE INDEX IF NOT EXISTS idx_results_lookup ON screener_results (screener_name); 
+CREATE INDEX IF NOT EXISTS idx_results_lookup ON screener_results (screener_name);
+
+-- Create market parameters table for risk-free rates
+CREATE TABLE IF NOT EXISTS market_parameters (
+    id SERIAL PRIMARY KEY,
+    as_of_date DATE UNIQUE NOT NULL,
+    risk_free_rate NUMERIC(6, 4)
+);
+
+-- Create stock metadata table for dividend yields
+CREATE TABLE IF NOT EXISTS stock_metadata (
+    id SERIAL PRIMARY KEY,
+    ticker VARCHAR(10) UNIQUE NOT NULL,
+    dividend_yield NUMERIC(6, 4)
+);
+
+-- Create indexes for new tables
+CREATE INDEX IF NOT EXISTS idx_market_parameters_date ON market_parameters(as_of_date);
+CREATE INDEX IF NOT EXISTS idx_stock_metadata_ticker ON stock_metadata(ticker); 

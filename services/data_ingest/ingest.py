@@ -64,6 +64,48 @@ class OptionChainIngester:
             
         return response.json()
     
+    @retry(
+        stop=stop_after_attempt(8),
+        wait=wait_exponential(multiplier=1, min=4, max=60)
+    )
+    def fetch_risk_free_rate(self) -> float:
+        """Fetch 10-year Treasury yield as risk-free rate from IEX Cloud."""
+        url = f"{self.settings.data_api_base_url}/data-points/market/T10Y"
+        params = {"token": self.settings.data_api_key}
+        
+        response = self.session.get(url, params=params, timeout=30)
+        
+        if response.status_code != 200:
+            API_ERRORS.inc()
+            raise requests.RequestException(
+                f"API error {response.status_code}: {response.text}"
+            )
+        
+        data = response.json()
+        # Convert percentage to decimal (e.g., 4.5% -> 0.045)
+        return float(data) / 100 if data else 0.0
+    
+    @retry(
+        stop=stop_after_attempt(8),
+        wait=wait_exponential(multiplier=1, min=4, max=60)
+    )
+    def fetch_dividend_yield(self, symbol: str) -> float:
+        """Fetch dividend yield for a stock from IEX Cloud."""
+        url = f"{self.settings.data_api_base_url}/stock/{symbol}/stats/dividendYield"
+        params = {"token": self.settings.data_api_key}
+        
+        response = self.session.get(url, params=params, timeout=30)
+        
+        if response.status_code != 200:
+            API_ERRORS.inc()
+            raise requests.RequestException(
+                f"API error {response.status_code}: {response.text}"
+            )
+        
+        data = response.json()
+        # Convert percentage to decimal (e.g., 2.1% -> 0.021)
+        return float(data) / 100 if data else 0.0
+    
     def normalize_option_data(self, symbol: str, raw_data: List[Dict]) -> pd.DataFrame:
         """Normalize raw option data into structured DataFrame."""
         if not raw_data:
@@ -122,6 +164,54 @@ class OptionChainIngester:
             cursor.close()
             conn.close()
     
+    def insert_market_parameters(self, risk_free_rate: float) -> int:
+        """Insert risk-free rate into market_parameters table."""
+        conn = psycopg2.connect(self.settings.database_url)
+        cursor = conn.cursor()
+        
+        try:
+            today = datetime.now().date()
+            
+            # Use UPSERT to handle duplicate dates
+            insert_query = """
+                INSERT INTO market_parameters (as_of_date, risk_free_rate)
+                VALUES (%s, %s)
+                ON CONFLICT (as_of_date) 
+                DO UPDATE SET risk_free_rate = EXCLUDED.risk_free_rate
+            """
+            
+            cursor.execute(insert_query, (today, risk_free_rate))
+            conn.commit()
+            
+            return 1
+            
+        finally:
+            cursor.close()
+            conn.close()
+    
+    def insert_stock_metadata(self, symbol: str, dividend_yield: float) -> int:
+        """Insert dividend yield into stock_metadata table."""
+        conn = psycopg2.connect(self.settings.database_url)
+        cursor = conn.cursor()
+        
+        try:
+            # Use UPSERT to handle duplicate tickers
+            insert_query = """
+                INSERT INTO stock_metadata (ticker, dividend_yield)
+                VALUES (%s, %s)
+                ON CONFLICT (ticker) 
+                DO UPDATE SET dividend_yield = EXCLUDED.dividend_yield
+            """
+            
+            cursor.execute(insert_query, (symbol, dividend_yield))
+            conn.commit()
+            
+            return 1
+            
+        finally:
+            cursor.close()
+            conn.close()
+    
     @REQUEST_LATENCY.time()
     def ingest_symbol(self, symbol: str) -> int:
         """Ingest option chain data for a single symbol."""
@@ -139,11 +229,47 @@ class OptionChainIngester:
             logging.error(f"Error ingesting {symbol}: {e}")
             raise
     
+    def ingest_market_data(self) -> Dict[str, float]:
+        """Ingest market parameters (risk-free rate and dividend yields)."""
+        results = {}
+        
+        try:
+            # Fetch risk-free rate
+            logging.info("Fetching risk-free rate (10-year Treasury yield)")
+            risk_free_rate = self.fetch_risk_free_rate()
+            self.insert_market_parameters(risk_free_rate)
+            results['risk_free_rate'] = risk_free_rate
+            logging.info(f"Risk-free rate ingested: {risk_free_rate:.4f}")
+            
+        except Exception as e:
+            logging.error(f"Failed to ingest risk-free rate: {e}")
+            results['risk_free_rate'] = 0.0
+        
+        # Fetch dividend yields for each symbol
+        for symbol in self.settings.symbols:
+            try:
+                logging.info(f"Fetching dividend yield for {symbol}")
+                dividend_yield = self.fetch_dividend_yield(symbol)
+                self.insert_stock_metadata(symbol, dividend_yield)
+                results[f'{symbol}_dividend_yield'] = dividend_yield
+                logging.info(f"Dividend yield for {symbol}: {dividend_yield:.4f}")
+                
+            except Exception as e:
+                logging.error(f"Failed to ingest dividend yield for {symbol}: {e}")
+                results[f'{symbol}_dividend_yield'] = 0.0
+        
+        return results
+    
     def run_ingest(self) -> Dict[str, int]:
-        """Run ingest for all configured symbols."""
+        """Run ingest for all configured symbols and market data."""
         results = {}
         total_rows = 0
         
+        # Ingest market parameters first
+        market_data = self.ingest_market_data()
+        results['market_data'] = market_data
+        
+        # Ingest option chains
         for symbol in self.settings.symbols:
             try:
                 rows = self.ingest_symbol(symbol)
@@ -153,7 +279,7 @@ class OptionChainIngester:
                 logging.error(f"Failed to ingest {symbol}: {e}")
                 results[symbol] = 0
         
-        logging.info(f"Ingest OK – total rows: {total_rows}")
+        logging.info(f"Ingest OK – total option rows: {total_rows}")
         return results
 
 def main():
