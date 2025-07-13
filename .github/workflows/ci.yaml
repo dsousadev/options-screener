@@ -5,6 +5,15 @@ on: [push, pull_request]
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    
+    # ----------------------------------------------------
+    # SET ENV VARS FOR THE ENTIRE JOB HERE
+    env:
+      SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+      FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+      IEX_CLOUD_API_KEY: ${{ secrets.IEX_CLOUD_API_KEY }}
+    # ----------------------------------------------------
+
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -18,13 +27,7 @@ jobs:
       - name: Run unit tests
         run: python -m pytest tests/
       - name: Run services for end-to-end test
-        env:
-          # Provide ALL secrets needed by ANY service in the compose file
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
-          DATA_API_KEY: ${{ secrets.DATA_API_KEY }}
-        run: |
-          docker compose -f infra/docker/docker-compose.yaml up --build -d
+        run: docker compose -f infra/docker/docker-compose.yaml up --build -d
 
       - name: Wait for services to be healthy
         run: |
