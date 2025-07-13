@@ -1,0 +1,1 @@
+# Variables for the auto-options-screener infrastructure 
