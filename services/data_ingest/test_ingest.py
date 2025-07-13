@@ -88,38 +88,35 @@ def test_fetch_option_chain_retry_on_error(ingester):
     data = ingester.fetch_option_chain("SPY")
     assert len(data) == 1
 
+@patch('ingest.psycopg2.extras.execute_values')
 @patch('ingest.psycopg2.connect')
-def test_insert_options_data(mock_connect, ingester):
-    """Test database insertion."""
+def test_insert_options_data(mock_connect, mock_execute_values, ingester):
+    """Test that insert_options_data calls execute_values with correct data."""
+    # Arrange: We still need to mock the connection and cursor to allow the code to run
     mock_cursor = MagicMock()
     mock_conn = MagicMock()
-    mock_conn.cursor.return_value = mock_cursor
-    mock_conn.commit.return_value = None
+    # This setup handles the 'with conn.cursor() as cursor:' pattern
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
     mock_connect.return_value = mock_conn
-    
-    # Mock the connection encoding to avoid KeyError
-    mock_conn.encoding = 'utf8'
-    mock_cursor.connection.encoding = 'utf8'
-    
+
+    # Arrange: Set up a dummy dataframe
     df = pd.DataFrame({
-        "underlying": ["SPY"],
-        "as_of": [datetime.now(timezone.utc)],
-        "expiry": ["2024-01-19"],
-        "strike": [450.0],
-        "call_put": ["C"],
-        "bid": [5.25],
-        "ask": [5.35],
-        "iv": [None],
-        "delta": [None],
-        "theta": [None],
-        "gamma": [None],
-        "vega": [None],
-        "rho": [None]
+        "underlying": ["SPY"], "as_of": [datetime.now(timezone.utc)],
+        "expiry": ["2024-01-19"], "strike": [450.0], "call_put": ["C"],
+        "bid": [5.25], "ask": [5.35], "iv": [None], "delta": [None],
+        "theta": [None], "gamma": [None], "vega": [None], "rho": [None]
     })
-    
+
+    # Act: Call the function we are testing
     rows_inserted = ingester.insert_options_data(df)
-    assert rows_inserted == 1
-    mock_cursor.execute.assert_called_once()
+
+    # Assert: Check that our function behaved as expected
+    assert rows_inserted == 1  # The function should return the number of rows processed
+    
+    # Assert that the 'execute_values' function was called exactly once
+    mock_execute_values.assert_called_once()
+
+    # Assert that the database connection was committed
     mock_conn.commit.assert_called_once()
 
 def test_empty_dataframe_insert(ingester):
