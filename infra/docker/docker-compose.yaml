@@ -1,4 +1,4 @@
-version: "3.9"
+# Remove obsolete version field
 
 services:
   db:
@@ -9,10 +9,17 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ../../infra/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build: ../../services/api
-    depends_on: [db]
+    depends_on:
+      db:
+        condition: service_healthy
     command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
     ports: ["8000:8000"]
     environment:
@@ -20,13 +27,17 @@ services:
 
   worker:
     build: ../../services/worker
-    depends_on: [db]
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:changeme@db:5432/opt_screener
 
   data_ingest:
     build: ../../services/data_ingest
-    depends_on: [db]
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:changeme@db:5432/opt_screener
       DATA_API_KEY: ${DATA_API_KEY}
@@ -37,11 +48,17 @@ services:
 
   notifier:
     build: ../../services/notifier
-    depends_on: [db]
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:changeme@db:5432/opt_screener
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       FROM_EMAIL: ${FROM_EMAIL}
+
+networks:
+  default:
+    name: options_screener_network
 
 volumes:
   pgdata: 
