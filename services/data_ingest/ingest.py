@@ -14,7 +14,7 @@ import pandas as pd
 import psycopg2
 from psycopg2.extras import execute_values
 from tenacity import retry, stop_after_attempt, wait_exponential
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from prometheus_client import start_http_server, Summary, Counter
 
 # Prometheus metrics
