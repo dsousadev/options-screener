@@ -14,9 +14,10 @@ def test_start_screening():
     """Tests the /screen endpoint for a valid request."""
     response = client.post(
         "/screen",
-        json={"tickers": ["GOOG"], "strategy": "iron_condor"}
+        json={"tickers": ["GOOG"], "strategy": "iron_condor", "email": "test@example.com"}
     )
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "queued"
-    assert "request_id" in data 
+    assert "request_id" in data
+    assert "notification_status" in data 
