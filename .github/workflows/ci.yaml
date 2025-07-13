@@ -74,9 +74,12 @@ jobs:
           curl -X POST http://localhost:8000/screen -H "Content-Type: application/json" -d '{"tickers": ["AAPL", "TSLA"], "strategy": "test_screener", "email": "test@example.com"}'
           echo ""
           echo "Waiting for notification processing..."
-          sleep 10
+          sleep 15
           echo "Checking notification logs..."
-          docker compose -f infra/docker/docker-compose.yaml logs notifier | tail -10
+          docker compose -f infra/docker/docker-compose.yaml logs notifier
+          echo ""
+          echo "Checking database for notification jobs..."
+          docker compose -f infra/docker/docker-compose.yaml exec -T db psql -U postgres -d opt_screener -c "SELECT id, recipient_email, subject, status FROM notifications ORDER BY created_at DESC LIMIT 5;"
           
       - name: Run data-ingest tests
         run: |
