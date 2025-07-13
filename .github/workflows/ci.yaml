@@ -46,7 +46,7 @@ jobs:
       - name: ✅ Get evidence for Done Check 1
         run: |
           echo "--- Testing API endpoint with notification ---"
-          curl -X POST http://localhost:8000/screen -H "Content-Type: application/json" -d '{"tickers": ["AAPL", "TSLA"], "strategy": "covered_call", "email": "${TO_EMAIL}"}'
+          curl -X POST http://localhost:8000/screen -H "Content-Type: application/json" -d "{\"tickers\": [\"AAPL\", \"TSLA\"], \"strategy\": \"covered_call\", \"email\": \"${TO_EMAIL}\"}"
           echo "" # new line
 
       - name: ✅ Get evidence for Done Check 2
@@ -71,7 +71,7 @@ jobs:
       - name: ✅ Test Email Notification
         run: |
           echo "--- Testing Email Notification System ---"
-          curl -X POST http://localhost:8000/screen -H "Content-Type: application/json" -d '{"tickers": ["AAPL", "TSLA"], "strategy": "test_screener", "email": "${TO_EMAIL}"}'
+          curl -X POST http://localhost:8000/screen -H "Content-Type: application/json" -d "{\"tickers\": [\"AAPL\", \"TSLA\"], \"strategy\": \"test_screener\", \"email\": \"${TO_EMAIL}\"}"
           echo ""
           echo "Waiting for notification processing..."
           sleep 15
