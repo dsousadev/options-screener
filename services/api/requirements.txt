@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 psycopg2-binary
-pydantic 
+pydantic
+redis>=5.0
+rq>=1.15 

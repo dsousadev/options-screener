@@ -56,6 +56,10 @@ services:
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       FROM_EMAIL: ${FROM_EMAIL}
 
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
 networks:
   default:
     name: options_screener_network
