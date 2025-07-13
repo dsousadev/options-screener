@@ -23,7 +23,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
         run: |
-          docker-compose -f infra/docker/docker-compose.yaml up --build -d
+          docker compose -f infra/docker/docker-compose.yaml up --build -d
 
       - name: Wait for services to be healthy
         run: sleep 20
@@ -37,12 +37,12 @@ jobs:
       - name: ✅ Get evidence for Done Check 2
         run: |
           echo "--- Checking Worker logs ---"
-          docker-compose -f infra/docker/docker-compose.yaml logs worker
+          docker compose -f infra/docker/docker-compose.yaml logs worker
 
       - name: ✅ Check Notifier logs
         run: |
           echo "--- Checking Notifier logs ---"
-          docker-compose -f infra/docker/docker-compose.yaml logs notifier
+          docker compose -f infra/docker/docker-compose.yaml logs notifier
       - name: Run data-ingest tests
         run: |
           cd services/data_ingest
