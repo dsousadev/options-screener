@@ -47,11 +47,21 @@ jobs:
         run: |
           echo "--- Checking Worker logs ---"
           docker compose -f infra/docker/docker-compose.yaml logs worker
+          echo ""
+          echo "--- Looking for screener results in worker logs ---"
+          docker compose -f infra/docker/docker-compose.yaml logs worker | grep -E "(Screener found|Saved.*results)" || echo "No screener results found yet (this is OK if no data exists)"
 
       - name: ✅ Check Notifier logs
         run: |
           echo "--- Checking Notifier logs ---"
           docker compose -f infra/docker/docker-compose.yaml logs notifier
+          
+      - name: ✅ Test Results API Endpoint
+        run: |
+          echo "--- Testing Results API Endpoint ---"
+          curl -X GET http://localhost:8000/results/find_cheap_weeklies
+          echo "" # new line
+          
       - name: Run data-ingest tests
         run: |
           cd services/data_ingest
